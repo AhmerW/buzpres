@@ -1,4 +1,5 @@
 import 'package:buzpres/src/pres/creator/pres_creator_controller.dart';
+import 'package:buzpres/src/pres/creator/pres_creator_settings_view.dart';
 import 'package:buzpres/src/pres/creator/pres_creator_slide_view.dart';
 import 'package:buzpres/src/pres/pres_models.dart';
 import 'package:buzpres/src/widgets/input_field_widget.dart';
@@ -49,7 +50,13 @@ class _PresCreatorViewState extends State<PresCreatorView> {
           Container(
             padding: const EdgeInsets.all(10.0),
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const PresCreatorSettingsViewDialog();
+                    });
+              },
               child: const Row(
                 children: [
                   Icon(Icons.settings_outlined),
@@ -199,8 +206,9 @@ class _PresSlideListWidgetState extends State<PresSlideListWidget> {
                                   key: ValueKey(slide.title),
                                   text: slide.title,
                                   border: InputBorder.none,
-                                  labelText:
-                                      slide.title.isEmpty ? "new slide" : "",
+                                  labelText: slide.title.isEmpty
+                                      ? "slide ${slide.index + 1}"
+                                      : "",
                                   style: slide.title.isEmpty
                                       ? const TextStyle(
                                           fontStyle: FontStyle.italic)

@@ -1,4 +1,5 @@
 import 'package:buzpres/src/pres/creator/pres_creator_controller.dart';
+import 'package:buzpres/src/pres/creator/pres_creator_slide_widgets.dart';
 import 'package:buzpres/src/pres/pres_models.dart';
 import 'package:buzpres/src/widgets/input_field_widget.dart';
 
@@ -30,9 +31,12 @@ class _PresCreatorSlideViewState extends State<PresCreatorSlideView> {
     });
   }
 
-  Widget getWidget(PresSlideWidgetModel model) {
-    if (model.type == PresSlideWidgetType.header) {
-      return PresCreatorSlideHeaderWidget(model);
+  Widget getWidget(PresSlideWidgetModelController controller) {
+    if (controller.model.type == PresSlideWidgetType.header) {
+      return PresCreatorSlideTextWidget(controller);
+    }
+    if (controller.model.type == PresSlideWidgetType.content) {
+      return PresCreatorSlideTextWidget(controller);
     }
     return Container();
   }
@@ -47,7 +51,7 @@ class _PresCreatorSlideViewState extends State<PresCreatorSlideView> {
           builder: (context, controller, _) {
             if (controller.slide.slideWidgets.isEmpty) {
               return const Center(
-                child: Text("No slide widgets added!"),
+                child: Text("Start by adding a  widget"),
               );
             }
             return ReorderableListView.builder(
@@ -61,8 +65,9 @@ class _PresCreatorSlideViewState extends State<PresCreatorSlideView> {
                     builder: (context, controller, _) {
                       if (controller.getCurrentSlide != null) {
                         String title = controller.getCurrentSlide!.title;
-                        return Text(
-                            "Editing '${title.isEmpty ? 'New slide' : title}'");
+                        return Text(title.isEmpty
+                            ? "Editing 'slide ${controller.getCurrentSlide!.index + 1}'"
+                            : "Editing '$title'");
                       }
                       return Container();
                     },
@@ -76,16 +81,47 @@ class _PresCreatorSlideViewState extends State<PresCreatorSlideView> {
                 PresSlideWidgetModel slideWidget =
                     controller.slide.slideWidgets[index];
                 return Container(
+                  padding: EdgeInsets.zero,
                   alignment: Alignment.center,
                   key: Key("$index"),
                   height: slideWidget.size,
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
+                    border: Border(
+                        left: BorderSide(
+                          color: Colors.black,
+                          width: slideWidget.borderSize,
+                          style: slideWidget.borderLeft
+                              ? BorderStyle.solid
+                              : BorderStyle.none,
+                        ),
+                        right: BorderSide(
+                          color: Colors.black,
+                          width: slideWidget.borderSize,
+                          style: slideWidget.borderRight
+                              ? BorderStyle.solid
+                              : BorderStyle.none,
+                        ),
+                        top: BorderSide(
+                          color: Colors.black,
+                          width: slideWidget.borderSize,
+                          style: slideWidget.borderTop
+                              ? BorderStyle.solid
+                              : BorderStyle.none,
+                        ),
+                        bottom: BorderSide(
+                          color: Colors.black,
+                          width: slideWidget.borderSize,
+                          style: slideWidget.borderBottom
+                              ? BorderStyle.solid
+                              : BorderStyle.none,
+                        )),
                   ),
-                  margin: const EdgeInsets.all(20),
+                  margin: EdgeInsets.only(
+                    left: 20,
+                    top: slideWidget.margin,
+                    bottom: slideWidget.margin,
+                    right: 20,
+                  ),
                   width: MediaQuery.of(context).size.width * 1,
                   child: ReorderableDragStartListener(
                     key: Key("$index"),
@@ -94,198 +130,253 @@ class _PresCreatorSlideViewState extends State<PresCreatorSlideView> {
                       children: [
                         Expanded(
                           child: Container(
-                            child: getWidget(slideWidget),
-                          ),
+                              child: controller.getWidgetController(index) !=
+                                      null
+                                  ? getWidget(
+                                      controller.getWidgetController(index)!)
+                                  : Container()),
                         ),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 250),
-                          child: !getIsVisible(index)
-                              ? Container(
+                        Wrap(
+                          children: [
+                            const Icon(Icons.drag_handle),
+                            Row(
+                              children: [
+                                Container(
                                   key: const Key("show"),
                                   alignment: Alignment.bottomLeft,
                                   child: TextButton.icon(
-                                    label: const Text("widget settings"),
-                                    icon:
-                                        const Icon(Icons.construction_outlined),
-                                    onPressed: () => setVisible(index, true),
-                                  ),
-                                )
-                              : Container(
-                                  key: const Key("hide"),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      top: BorderSide(color: Colors.black),
-                                    ),
-                                  ),
-                                  child: Container(
-                                    alignment: Alignment.bottomLeft,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: IntrinsicHeight(
-                                        child: Row(
-                                          children: [
-                                            Tooltip(
-                                              message: "help",
-                                              child: IconButton(
-                                                onPressed: () {},
-                                                icon: const Icon(
-                                                  Icons.info_outline,
-                                                ),
-                                              ),
-                                            ),
-                                            Tooltip(
-                                              message: "hide widget",
-                                              child: IconButton(
-                                                onPressed: () =>
-                                                    setVisible(index, false),
-                                                icon: const Icon(
-                                                  Icons.visibility_off_outlined,
-                                                ),
-                                              ),
-                                            ),
-                                            Tooltip(
-                                              message: "delete widget",
-                                              child: IconButton(
-                                                onPressed: () {
-                                                  controller
-                                                      .deleteWidget(index);
-                                                },
-                                                icon: const Icon(
-                                                  Icons.delete,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ),
-                                            const VerticalDivider(),
-                                            Column(
-                                              children: [
-                                                const Text("Widget Size"),
-                                                Slider(
-                                                  value: slideWidget.size,
-                                                  onChanged: (v) {
-                                                    setState(() {
-                                                      controller
-                                                          .changeWidgetSize(
-                                                              index, v);
-                                                    });
-                                                  },
-                                                  min: 100,
-                                                  max: 800,
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(
-                                              width: 100,
-                                              child: InputFieldWidget(
-                                                labelText: "font size",
-                                                text: slideWidget.fontSize
-                                                    .toString(),
-                                                textInputType:
-                                                    TextInputType.number,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                ),
-                                                inputFormatters: [
-                                                  FilteringTextInputFormatter
-                                                      .digitsOnly
-                                                ],
-                                                oncomplete: (fontSize) {
-                                                  double? doubleFontSize =
-                                                      double.tryParse(fontSize);
-                                                  if (doubleFontSize != null) {
-                                                    if (doubleFontSize > 2 &&
-                                                        doubleFontSize < 51) {
-                                                      setState(() {
-                                                        controller
-                                                            .changeWidgetFontSize(
-                                                                index,
-                                                                doubleFontSize);
-                                                      });
-                                                    } else {}
-                                                  }
-                                                },
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.all(10),
-                                              child: PopupMenuButton<
-                                                  PresSlideWidgetTextAlign>(
-                                                padding:
-                                                    const EdgeInsets.all(10),
-                                                tooltip: "text aligment",
-                                                child: const Row(
-                                                  children: [
-                                                    Text("Text alignment"),
-                                                    Icon(Icons.menu_outlined)
-                                                  ],
-                                                ),
-                                                onSelected:
-                                                    (PresSlideWidgetTextAlign
-                                                        textAlign) {
-                                                  setState(
-                                                    () {
-                                                      controller
-                                                          .changeWidgetTextAlign(
-                                                        index,
-                                                        textAlign,
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                itemBuilder: (context) => [
-                                                  const PopupMenuItem(
-                                                    value:
-                                                        PresSlideWidgetTextAlign
-                                                            .left,
-                                                    child: Text("Left"),
-                                                  ),
-                                                  const PopupMenuItem(
-                                                    value:
-                                                        PresSlideWidgetTextAlign
-                                                            .center,
-                                                    child: Text("Center"),
-                                                  ),
-                                                  const PopupMenuItem(
-                                                    value:
-                                                        PresSlideWidgetTextAlign
-                                                            .right,
-                                                    child: Text("Right"),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            VerticalDivider(),
-                                            Container(
-                                                padding:
-                                                    const EdgeInsets.all(10),
-                                                child: Column(
-                                                  children: [
-                                                    Text("Widget Borders"),
-                                                    ToggleButtons(
-                                                      renderBorder: true,
-                                                      isSelected: [
-                                                        true,
-                                                        false,
-                                                        true,
-                                                        true
-                                                      ],
-                                                      children: const [
-                                                        Icon(Icons.border_left),
-                                                        Icon(
-                                                            Icons.border_right),
-                                                        Icon(Icons.border_top),
-                                                        Icon(Icons
-                                                            .border_bottom),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                )),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
+                                    label: const Text("text options"),
+                                    icon: const Icon(Icons.text_fields),
+                                    onPressed: () {
+                                      controller.changeToolbarValue(index);
+                                    },
                                   ),
                                 ),
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  child: !getIsVisible(index)
+                                      ? Container(
+                                          key: const Key("show"),
+                                          alignment: Alignment.bottomLeft,
+                                          child: TextButton.icon(
+                                            label:
+                                                const Text("widget settings"),
+                                            icon: const Icon(
+                                                Icons.construction_outlined),
+                                            onPressed: () =>
+                                                setVisible(index, true),
+                                          ),
+                                        )
+                                      : Container(
+                                          key: const Key("hide"),
+                                          decoration: const BoxDecoration(
+                                            border: Border(
+                                              top: BorderSide(
+                                                  color: Colors.black),
+                                            ),
+                                          ),
+                                          child: Container(
+                                            alignment: Alignment.bottomLeft,
+                                            child: Container(
+                                              child: SingleChildScrollView(
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                child: Row(
+                                                  children: [
+                                                    Tooltip(
+                                                      message: "help",
+                                                      child: IconButton(
+                                                        onPressed: () {},
+                                                        icon: const Icon(
+                                                          Icons.info_outline,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Tooltip(
+                                                      message: "hide settings",
+                                                      child: IconButton(
+                                                        onPressed: () =>
+                                                            setVisible(
+                                                                index, false),
+                                                        icon: const Icon(
+                                                          Icons
+                                                              .visibility_off_outlined,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Tooltip(
+                                                      message: "delete widget",
+                                                      child: IconButton(
+                                                        onPressed: () {
+                                                          controller
+                                                              .deleteWidget(
+                                                                  index);
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons.delete,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const VerticalDivider(),
+                                                    Column(
+                                                      children: [
+                                                        const Text(
+                                                            "Widget Size"),
+                                                        Slider(
+                                                          value:
+                                                              slideWidget.size,
+                                                          onChanged: (v) {
+                                                            setState(() {
+                                                              controller
+                                                                  .changeWidgetSize(
+                                                                      index, v);
+                                                            });
+                                                          },
+                                                          min: 205,
+                                                          max: 800,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Container(
+                                                      margin: EdgeInsets.only(
+                                                          top: 20),
+                                                      width: 100,
+                                                      child: InputFieldWidget(
+                                                        labelText:
+                                                            "widget margin",
+                                                        text: slideWidget.margin
+                                                            .toString(),
+                                                        textInputType:
+                                                            TextInputType
+                                                                .number,
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                        ),
+                                                        inputFormatters: [
+                                                          FilteringTextInputFormatter
+                                                              .digitsOnly
+                                                        ],
+                                                        oncomplete: (fontSize) {
+                                                          double? doubleMargin =
+                                                              double.tryParse(
+                                                                  fontSize);
+                                                          if (doubleMargin !=
+                                                              null) {
+                                                            if (doubleMargin >=
+                                                                    0 &&
+                                                                doubleMargin <
+                                                                    50) {
+                                                              setState(() {
+                                                                controller
+                                                                    .changeWidgetMargin(
+                                                                        index,
+                                                                        doubleMargin);
+                                                              });
+                                                            } else {}
+                                                          }
+                                                        },
+                                                      ),
+                                                    ),
+                                                    VerticalDivider(),
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              10),
+                                                      child: Column(
+                                                        children: [
+                                                          const Text(
+                                                              "Widget Borders"),
+                                                          ToggleButtons(
+                                                            onPressed:
+                                                                (borderIndex) {
+                                                              controller
+                                                                  .changeWidgetBorderState(
+                                                                      index,
+                                                                      borderIndex);
+                                                            },
+                                                            renderBorder: true,
+                                                            isSelected: [
+                                                              slideWidget
+                                                                  .borderLeft,
+                                                              slideWidget
+                                                                  .borderRight,
+                                                              slideWidget
+                                                                  .borderTop,
+                                                              slideWidget
+                                                                  .borderBottom
+                                                            ],
+                                                            children: const [
+                                                              Icon(Icons
+                                                                  .border_left),
+                                                              Icon(Icons
+                                                                  .border_right),
+                                                              Icon(Icons
+                                                                  .border_top),
+                                                              Icon(Icons
+                                                                  .border_bottom),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                              top: 20),
+                                                      child: SizedBox(
+                                                        width: 100,
+                                                        child: InputFieldWidget(
+                                                          labelText:
+                                                              "border size",
+                                                          text: slideWidget
+                                                              .borderSize
+                                                              .toString(),
+                                                          textInputType:
+                                                              TextInputType
+                                                                  .number,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 12,
+                                                          ),
+                                                          inputFormatters: [
+                                                            FilteringTextInputFormatter
+                                                                .digitsOnly
+                                                          ],
+                                                          oncomplete:
+                                                              (fontSize) {
+                                                            double?
+                                                                doubleBorderSize =
+                                                                double.tryParse(
+                                                                    fontSize);
+                                                            if (doubleBorderSize !=
+                                                                null) {
+                                                              if (doubleBorderSize >=
+                                                                      0 &&
+                                                                  doubleBorderSize <
+                                                                      30) {
+                                                                setState(() {
+                                                                  controller
+                                                                      .changeWidgetBorderSize(
+                                                                          index,
+                                                                          doubleBorderSize);
+                                                                });
+                                                              } else {}
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -316,28 +407,100 @@ TextAlign getPresSlideWidgetModelTextAlign(PresSlideWidgetModel model) {
   }
 }
 
-class PresCreatorSlideHeaderWidget extends StatefulWidget {
-  final PresSlideWidgetModel model;
-  const PresCreatorSlideHeaderWidget(this.model, {super.key});
 
-  @override
-  State<PresCreatorSlideHeaderWidget> createState() =>
-      _PresCreatorSlideHeaderWidgetState();
-}
 
-class _PresCreatorSlideHeaderWidgetState
-    extends State<PresCreatorSlideHeaderWidget> {
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 500,
-      child: InputFieldWidget(
-        labelText: "Header",
-        expands: true,
-        border: InputBorder.none,
-        textAlign: getPresSlideWidgetModelTextAlign(widget.model),
-        style: TextStyle(fontSize: widget.model.fontSize),
-      ),
-    );
-  }
-}
+/*
+Container(
+                                                  margin: const EdgeInsets.only(
+                                                      right: 5),
+                                                  child: SizedBox(
+                                                    width: 100,
+                                                    child: InputFieldWidget(
+                                                      labelText: "font size",
+                                                      text: slideWidget.fontSize
+                                                          .toString(),
+                                                      textInputType:
+                                                          TextInputType.number,
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                      ),
+                                                      inputFormatters: [
+                                                        FilteringTextInputFormatter
+                                                            .digitsOnly
+                                                      ],
+                                                      oncomplete: (fontSize) {
+                                                        double? doubleFontSize =
+                                                            double.tryParse(
+                                                                fontSize);
+                                                        if (doubleFontSize !=
+                                                            null) {
+                                                          if (doubleFontSize >
+                                                                  2 &&
+                                                              doubleFontSize <
+                                                                  51) {
+                                                            setState(() {
+                                                              controller
+                                                                  .changeWidgetFontSize(
+                                                                      index,
+                                                                      doubleFontSize);
+                                                            });
+                                                          } else {}
+                                                        }
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+*/
+/*
+Container(
+                                                  padding:
+                                                      const EdgeInsets.all(10),
+                                                  child: PopupMenuButton<
+                                                      PresSlideWidgetTextAlign>(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            10),
+                                                    tooltip: "text aligment",
+                                                    child: const Row(
+                                                      children: [
+                                                        Text("Text alignment"),
+                                                        Icon(
+                                                            Icons.menu_outlined)
+                                                      ],
+                                                    ),
+                                                    onSelected:
+                                                        (PresSlideWidgetTextAlign
+                                                            textAlign) {
+                                                      setState(
+                                                        () {
+                                                          controller
+                                                              .changeWidgetTextAlign(
+                                                            index,
+                                                            textAlign,
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                    itemBuilder: (context) => [
+                                                      const PopupMenuItem(
+                                                        value:
+                                                            PresSlideWidgetTextAlign
+                                                                .left,
+                                                        child: Text("Left"),
+                                                      ),
+                                                      const PopupMenuItem(
+                                                        value:
+                                                            PresSlideWidgetTextAlign
+                                                                .center,
+                                                        child: Text("Center"),
+                                                      ),
+                                                      const PopupMenuItem(
+                                                        value:
+                                                            PresSlideWidgetTextAlign
+                                                                .right,
+                                                        child: Text("Right"),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+*/

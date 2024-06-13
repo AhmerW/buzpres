@@ -14,9 +14,11 @@ Map<PresSlideWidgetType, IconData> presSlideWidgetTypeIcons = {
 
 // Represents one widget, which can contain sub widgets
 class PresSlideWidgetModel {
+  int widgetNumber = 0;
   final PresSlideWidgetType type;
   PresSlideWidgetTextAlign textAlign;
   double size;
+  double margin;
   double fontSize;
   double borderSize;
   final List<PresSlideWidgetType> children;
@@ -24,19 +26,21 @@ class PresSlideWidgetModel {
   bool borderRight;
   bool borderTop;
   bool borderBottom;
+  String content;
+  var json;
 
-  PresSlideWidgetModel(
-    this.type, {
-    this.children = const [],
-    this.size = 200,
-    this.fontSize = 14,
-    this.textAlign = PresSlideWidgetTextAlign.left,
-    this.borderBottom = true,
-    this.borderRight = true,
-    this.borderLeft = true,
-    this.borderTop = true,
-    this.borderSize = 1,
-  });
+  PresSlideWidgetModel(this.type,
+      {this.children = const [],
+      this.size = 205,
+      this.fontSize = 14,
+      this.margin = 10,
+      this.textAlign = PresSlideWidgetTextAlign.left,
+      this.borderBottom = false,
+      this.borderRight = false,
+      this.borderLeft = false,
+      this.borderTop = false,
+      this.borderSize = 1,
+      this.content = ""});
 }
 
 class PresModel {
